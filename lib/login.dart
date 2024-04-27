@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
@@ -15,6 +16,8 @@ class Login extends StatefulWidget {
 
 class _LoginPageState extends State<Login> {
   final _formKey = GlobalKey<FormBuilderState>();
+  bool active = false;
+  bool error = false;
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +44,7 @@ class _LoginPageState extends State<Login> {
             children: [
               FormBuilder(
                 key: _formKey,
+                autovalidateMode: AutovalidateMode.disabled,
                 child: Column(
                   children: [
                     FormBuilderField(
@@ -50,7 +54,10 @@ class _LoginPageState extends State<Login> {
                               height: height * 0.06,
                               // keyboardType: TextInputType.phone,
                               hintText: "شماره موبایل",
-                              maxLength: 12,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly
+                              ],
+                              maxLength: 11,
                               onChanged: (value) {
                                 field.didChange(value);
                               });
@@ -70,41 +77,58 @@ class _LoginPageState extends State<Login> {
                             width: width * 0.33,
                             height: height * 0.06,
                             passwordType: true,
-                            hintText: "پسورد",
+                            hintText: "رمز عبور",
                             onChanged: (value) {
                               field.didChange(value);
                             });
                       },
                       name: "pass",
-                      autovalidateMode: AutovalidateMode.always,
+                      // autovalidateMode: AutovalidateMode.always,
                       validator: FormBuilderValidators.compose([
-                        FormBuilderValidators.required(errorText: "eeeee"),
+                        FormBuilderValidators.required(),
                       ]),
                     ),
+                    Container(
+                        alignment: AlignmentDirectional.centerEnd,
+                        width: width * 0.33,
+                        height: height * 0.06,
+                        child: error
+                            ? Text(
+                                "رمز اشتباه است",
+                                style: TextStyle(color: Colors.red[800]),
+                              )
+                            : null),
                     const SizedBox(
                       height: 60,
                     ),
                     ElevatedButton(
-                      onPressed: () async {
-                        if (_formKey.currentState!.validate()) {
-                          String phone = _formKey
-                              .currentState!.fields["phone"]!.value
-                              .toString();
-                          String pass = _formKey
-                              .currentState!.fields["pass"]!.value
-                              .toString();
-                          bool access = false;
-                          await login(phone, pass).then((value) {
-                            setState(() {
-                              access = value;
-                            });
-                            if (access == true) {
-                              // print(access);
-                              context.go("/dashboard");
+                      onPressed: active
+                          ? () async {
+                              if (_formKey.currentState!.validate()) {
+                                error = false;
+                                String phone = _formKey
+                                    .currentState!.fields["phone"]!.value
+                                    .toString();
+                                String pass = _formKey
+                                    .currentState!.fields["pass"]!.value
+                                    .toString();
+                                bool access = false;
+                                await login(phone, pass).then((value) {
+                                  setState(() {
+                                    access = value;
+                                  });
+                                  if (access == true) {
+                                    // print(access);
+                                    context.go("/dashboard");
+                                  }
+                                });
+                              } else {
+                                setState(() {
+                                  error = true;
+                                });
+                              }
                             }
-                          });
-                        }
-                      },
+                          : null,
                       style: ElevatedButton.styleFrom(
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12)),
@@ -118,8 +142,18 @@ class _LoginPageState extends State<Login> {
                   ],
                 ),
                 onChanged: () {
-                  // print(
-                  //     _formKey.currentState?.fields["pass"]?.value.toString());
+                  if (_formKey.currentState!.fields["phone"]!.value
+                          .toString()
+                          .length ==
+                      11) {
+                    setState(() {
+                      active = true;
+                    });
+                  } else {
+                    setState(() {
+                      active = false;
+                    });
+                  }
                 },
               )
             ],

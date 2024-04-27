@@ -1,5 +1,5 @@
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class CoustomTextFiled extends StatefulWidget {
   final double width;
@@ -8,24 +8,26 @@ class CoustomTextFiled extends StatefulWidget {
   final Color shadowColor;
   final Color borderColor;
   final Color borderFocusedColor;
-  final int maxLength;
+  final int? maxLength;
   final bool passwordType;
-  final String hintText;
+  final String? hintText;
   final TextInputType keyboardType;
-  final onChanged;
+  final void Function(String value) onChanged;
+  final List<TextInputFormatter>? inputFormatters;
 
   const CoustomTextFiled({
     super.key,
     required this.width,
     required this.height,
     this.redius = 12,
-    this.maxLength = 9999999,
+    this.maxLength,
+    this.inputFormatters,
     this.keyboardType = TextInputType.none,
     this.shadowColor = const Color.fromARGB(184, 119, 174, 246),
     this.borderColor = Colors.blue,
     this.borderFocusedColor = const Color.fromRGBO(21, 101, 192, 1),
     this.passwordType = false,
-    this.hintText = "",
+    this.hintText,
     required this.onChanged,
   });
 
@@ -39,7 +41,8 @@ class _CoustomTextFiledState extends State<CoustomTextFiled> {
   bool _isfocused1 = false;
   bool _ishover1 = false;
   bool _visibilityHover = false;
-  late bool _visibility ;
+  late bool _visibility;
+  int _length = 0;
 
   @override
   void initState() {
@@ -61,6 +64,12 @@ class _CoustomTextFiledState extends State<CoustomTextFiled> {
       _isfocused1 = _focusNode1.hasFocus;
     });
   }
+
+  // void test(currentLength) {
+  //   setState(() {
+  //     _length = currentLength;
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -93,15 +102,37 @@ class _CoustomTextFiledState extends State<CoustomTextFiled> {
         child: TextField(
           // controller: _textEditingController1,
           focusNode: _focusNode1,
+
           onChanged: widget.onChanged,
           obscureText: _visibility,
           cursorColor: Colors.blue,
-          keyboardType: TextInputType.number,
           maxLength: widget.maxLength,
+          inputFormatters: widget.inputFormatters,
           cursorWidth: 1,
           obscuringCharacter: "*",
+          buildCounter: widget.maxLength != null
+              ? (context,
+                  {required currentLength,
+                  required isFocused,
+                  required maxLength}) {
+                  _length = currentLength;
+                  print(
+                      _length.toString() + "------" + currentLength.toString());
+
+                  return null;
+                }
+              : null,
           decoration: InputDecoration(
-            counterText: "",
+            // counterText: "",
+            contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+            prefixIcon: widget.maxLength != null
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [Text("$_length/${widget.maxLength}")]),
+                  )
+                : null,
             suffixIconConstraints: const BoxConstraints(),
             suffixIcon: widget.passwordType
                 ? Padding(
